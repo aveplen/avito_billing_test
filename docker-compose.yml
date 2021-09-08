@@ -1,0 +1,40 @@
+version: "3.9"
+services:
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD: qwerty
+    volumes:
+      - ./schema/avito_billing_init.sh:/docker-entrypoint-initdb.d/avito_billing_init.sh
+    ports:
+      - "5432:5432"
+    networks:
+      new:
+        aliases:
+          - database
+
+  avito_billing_test:
+    environment:
+      DB_HOST: "database"
+      DB_USERNAME: "postgres"
+      DB_PASSWORD: "qwerty"
+      DB_NAME: "avito_billing"
+      GIN_MODE: "release"
+    image: aveplen/avito_billing_test
+    restart: always
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    command: ["./wait-for-postgres.sh", "db", "./avito_billing", "./config/config.yml"]
+    ports:
+      - 8080:8080
+    depends_on:
+      - db
+    networks:
+      - new
+
+networks:
+  new:
